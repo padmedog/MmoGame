@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.IO;
 using System.Net;
 
@@ -118,16 +119,28 @@ namespace GMS_Server
             }
             else
             {
+                createSettingsFile();
+            }
+        }
+        private void createSettingsFile(bool tried = false)
+        {
+            if(!tried)
                 Console.WriteLine("No settings file found, attempting to create one, and using default settings");
-                try
-                {
-                    File.Create(settings_path);
-                    File.WriteAllText(settings_path, String.Format("ip null{0}port {1}{0}maxplayers {2}{0}maxtimeout {3}", Environment.NewLine, port, maxConnections, timeout));
-                }
-                catch (IOException)
-                {
-                    Console.WriteLine("error-settings file in use");
-                }
+            try
+            {
+                //File.Create(settings_path);
+                //File.WriteAllText(settings_path, String.Format("ip null{0}port {1}{0}maxplayers {2}{0}maxtimeout {3}", Environment.NewLine, port, maxConnections, timeout));
+                StreamWriter sw = new StreamWriter(settings_path);
+                sw.WriteLine("ip null");
+                sw.WriteLine("port {0}", port);
+                sw.WriteLine("maxplayers {0}", maxConnections);
+                sw.WriteLine("maxtimeout {0}", timeout);
+                sw.Close();
+            }
+            catch (IOException)
+            {
+                Console.WriteLine("error-settings file in use, trying again");
+                createSettingsFile(true);
             }
         }
     }

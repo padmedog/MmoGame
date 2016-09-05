@@ -344,6 +344,7 @@ namespace GMS_Server
         private GamePoint3D previous_pos;
         public GamePoint3D spd;
         public GamePoint3D base_spd;
+        public GamePoint3D spd_deadzone;
         public GamePoint3D frc;
         public GamePoint2D size;
         public float direction, pitch, precision, previous_direction = 0f, previous_pitch = 0f;
@@ -355,10 +356,11 @@ namespace GMS_Server
             spd = new GamePoint3D();
             frc = new GamePoint3D(1.2d,1.2d,1.01d);      //friction system needs to be changed to support different areas, like just going through air 
             base_spd = new GamePoint3D(1d, 0.5d, 0.75d); //    or walking on something, which have different frictions
+            spd_deadzone = new GamePoint3D(0.2d, 0.2d, 0.3d);
             direction = 0f;
             pitch = 0f;
             size = Size;
-            precision = 1; //higher number = chunkier collision checks (faster but crappier)
+            precision = 0.2f; //higher number = chunkier collision checks (faster but crappier)
 
             BufferStream buff = new BufferStream(1024, 1);
             buff.Write((ushort)4);
@@ -375,6 +377,7 @@ namespace GMS_Server
         }
         public bool update(GameWorld gameWorld)
         {
+
             spd.Z -= 0.5;
 
             GamePoint3D sz3_ = new GamePoint3D(size.X, size.X, -size.Y);
@@ -422,6 +425,18 @@ namespace GMS_Server
                     spd.Z -= precision * Math.Sign(spd.Z);
                     t_.Z = spd.Z;
                 }
+            }
+            if (Math.Abs(spd.X) <= spd_deadzone.X)
+            {
+                spd.X = 0;
+            }
+            if (Math.Abs(spd.Y) <= spd_deadzone.Y)
+            {
+                spd.Y = 0;
+            }
+            if (Math.Abs(spd.Z) <= spd_deadzone.Z)
+            {
+                spd.Z = 0;
             }
 
             pos += spd;
