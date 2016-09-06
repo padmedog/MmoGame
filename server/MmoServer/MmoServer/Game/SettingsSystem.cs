@@ -45,7 +45,7 @@ namespace GMS_Server
         {
             if (File.Exists(settings_path))
             {
-                Console.WriteLine("Found a settings file");
+                mainProgram.WriteLine("Found a settings file");
                 foreach (string line in File.ReadLines(settings_path))
                 {
                     string nextCmd;
@@ -63,7 +63,7 @@ namespace GMS_Server
                             }
                             catch (FormatException)
                             {
-                                Console.WriteLine("error-invalid port in settings file");
+                                mainProgram.WriteLine("error-invalid port in settings file");
                                 break;
                             }
                             port = tmp_;
@@ -79,7 +79,7 @@ namespace GMS_Server
                                 }
                                 catch (FormatException)
                                 {
-                                    Console.WriteLine("error-invalid ip in settings file");
+                                    mainProgram.WriteLine("error-invalid ip in settings file");
                                     break;
                                 }
                             }
@@ -96,7 +96,7 @@ namespace GMS_Server
                             }
                             catch (FormatException)
                             {
-                                Console.WriteLine("error-invalid max players in settings file");
+                                mainProgram.WriteLine("error-invalid max players in settings file");
                                 break;
                             }
                             maxConnections = tmp_;
@@ -109,7 +109,7 @@ namespace GMS_Server
                             }
                             catch (FormatException)
                             {
-                                Console.WriteLine("error-invalid max timeout in settings file");
+                                mainProgram.WriteLine("error-invalid max timeout in settings file");
                                 break;
                             }
                             timeout = tmpu_;
@@ -125,11 +125,9 @@ namespace GMS_Server
         private void createSettingsFile(bool tried = false)
         {
             if(!tried)
-                Console.WriteLine("No settings file found, attempting to create one, and using default settings");
+                mainProgram.WriteLine("No settings file found, attempting to create one, and using default settings");
             try
             {
-                //File.Create(settings_path);
-                //File.WriteAllText(settings_path, String.Format("ip null{0}port {1}{0}maxplayers {2}{0}maxtimeout {3}", Environment.NewLine, port, maxConnections, timeout));
                 StreamWriter sw = new StreamWriter(settings_path);
                 sw.WriteLine("ip null");
                 sw.WriteLine("port {0}", port);
@@ -139,7 +137,7 @@ namespace GMS_Server
             }
             catch (IOException)
             {
-                Console.WriteLine("error-settings file in use, trying again");
+                mainProgram.WriteLine("error-settings file in use, trying again");
                 createSettingsFile(true);
             }
         }

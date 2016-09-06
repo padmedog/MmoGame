@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using SharpServer.Sockets;
+using GMS_Server;
 
 namespace SharpServer.Buffers {
     /// <summary>
@@ -33,7 +34,7 @@ namespace SharpServer.Buffers {
                 }
                 catch(System.IO.IOException e)
                 {
-                    Console.WriteLine(e.ToString());
+                    mainProgram.WriteLine(e.ToString());
                 }
             }
         }

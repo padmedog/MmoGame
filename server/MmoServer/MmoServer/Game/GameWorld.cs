@@ -136,7 +136,7 @@ namespace GMS_Server
                 }
                 catch(InvalidOperationException)
                 {
-                    Console.WriteLine("error-client map probably changed");
+                    mainProgram.WriteLine("error-client map probably changed");
                 }
             }
             canPass = false;
@@ -157,10 +157,14 @@ namespace GMS_Server
                 }
                 catch(InvalidOperationException)
                 {
-                    Console.WriteLine("error-entity map probably changed");
+                    mainProgram.WriteLine("error-entity map probably changed");
                 }
             }
             sendUpdates();
+            if(mainProgram.gameSteps%600 == 0)
+            {
+                mainProgram.UpdateConsoleFile();
+            }
         }
         public void sendUpdates(List<int> alreadyDone = null)
         {
@@ -205,7 +209,7 @@ namespace GMS_Server
             }
             catch(InvalidOperationException)
             {
-                Console.WriteLine("error-client map probably changed");
+                mainProgram.WriteLine("error-client map probably changed");
                 sendUpdates(alreadyDone);
             }
         }
@@ -232,7 +236,7 @@ namespace GMS_Server
             }
             catch (FormatException)
             {
-                Console.WriteLine("error-improper socket");
+                mainProgram.WriteLine("error-improper socket");
                 return null;
             }
             return getClientFromSocket(socket_);
@@ -246,7 +250,7 @@ namespace GMS_Server
                     return client.Value;
                 }
             }
-            Console.WriteLine("error-invalid socket");
+            mainProgram.WriteLine("error-invalid socket");
             return null;
         }
         public GameEntity getEntity(int id)
@@ -274,13 +278,13 @@ namespace GMS_Server
                 }
                 catch (InvalidOperationException)
                 {
-                    Console.WriteLine("error-client map probably changed; attempting to send remaining data");
+                    mainProgram.WriteLine("error-client map probably changed; attempting to send remaining data");
                     sendToAllClients(buff, sentList);
                 }
             }
             else
             {
-                Console.WriteLine("error-inputted buffer is null");
+                mainProgram.WriteLine("error-inputted buffer is null");
             }
         }
         public bool sendToClient(GameClient client, BufferStream buff)
@@ -301,7 +305,7 @@ namespace GMS_Server
                 }
                 catch (System.IO.IOException)
                 {
-                    Console.WriteLine("error-writing to stream for socket " + client.Socket.ToString() + Environment.NewLine + " probably failed, trying again");
+                    mainProgram.WriteLine("error-writing to stream for socket " + client.Socket.ToString() + Environment.NewLine + " probably failed, trying again");
                     return sendToClient(client, buff);
                 }
             }
@@ -309,11 +313,11 @@ namespace GMS_Server
             {
                 if(client == null)
                 {
-                    Console.WriteLine("error-inputted client is null");
+                    mainProgram.WriteLine("error-inputted client is null");
                 }
                 if(buff == null)
                 {
-                    Console.WriteLine("error-inputted buffer is null");
+                    mainProgram.WriteLine("error-inputted buffer is null");
                 }
             }
             return false;
@@ -553,7 +557,6 @@ namespace GMS_Server
                     if(tmpStep % pos_ == 0 && !updatedQueue.Contains(thing))
                     {
                         updatedQueue.Enqueue(thing);
-                        //Console.WriteLine("added something to the queue");
                     }
                     pos_++;
                 }
@@ -641,13 +644,13 @@ namespace GMS_Server
             {
                 if (times >= 17)
                 {
-                    Console.WriteLine("pretty much failed to set input after 16 attempts");
+                    mainProgram.WriteLine("pretty much failed to set input after 16 attempts");
                     return false;
                 }
                 else if (times > 1)
-                    Console.WriteLine("error setting input, trying again (attempt #" + times.ToString() + ")");
+                    mainProgram.WriteLine("error setting input, trying again (attempt #" + times.ToString() + ")");
                 else if (times == 1)
-                    Console.WriteLine("  error-key: " + key + ", val: " + state.ToString() + Environment.NewLine + e.ToString());
+                    mainProgram.WriteLine("  error-key: " + key + ", val: " + state.ToString() + Environment.NewLine + e.ToString());
                 return setInput(key, state, times + 1);
             }
             return true;
@@ -662,7 +665,7 @@ namespace GMS_Server
             }
             catch(KeyNotFoundException)
             {
-                Console.WriteLine("error getting input");
+                mainProgram.WriteLine("error getting input");
             }
             return val_;
         }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using SharpServer.Buffers;
 using SharpServer.Sockets;
 using System.Collections.Generic;
@@ -22,14 +23,19 @@ namespace GMS_Server
         8 - server wants updated input*/
 
         //global game variables
-        static SettingsSystem settings;
-        static GameWorld gameWorld;
-        static TcpServerHandler game_server;
+        public static SettingsSystem settings;
+        public static GameWorld gameWorld;
+        public static TcpServerHandler game_server;
         public static ulong gameSteps;
+        public const string CONSOLE_FILE_PATH = @".\console.txt";
+        public static Queue<string> ConsoleQueue;
         public static void Main()
         {
             //make the socketbinder
             SocketBinder binder = new SocketBinder();
+            //make the console queue
+            ConsoleQueue = new Queue<string>();
+            InitConsoleFile();
             //make the settings
             settings = new SettingsSystem();
             //we need to load from the file, if there is one
@@ -58,7 +64,7 @@ namespace GMS_Server
             while (game_server.Status)
             {
                 //commands
-                CommandSystem.DoCommand(CommandSystem.Update(), gameWorld, game_server, settings);
+                CommandSystem.DoCommand(CommandSystem.Update());
 
                 if (sleepJump == 2)
                 {
@@ -76,30 +82,31 @@ namespace GMS_Server
                 }
                 sleepJump++;
             }//whatever after the loop is triggered here when the server is closed
+            UpdateConsoleFile();
             Thread.Sleep(1000);
         }
 
         private static void event_clientOverflow(TcpClientHandler client)
         {
-            Console.WriteLine("Connection attempt from " + getIp(client).ToString() + ", socket " + client.Socket.ToString() + ", however the server is full");
+            mainProgram.WriteLine("Connection attempt from " + getIp(client).ToString() + ", socket " + client.Socket.ToString() + ", however the server is full");
         }
 
         private static void event_attemptReconnect(TcpClientHandler client)
         {
-            Console.WriteLine("Client " + client.Socket.ToString() + "'s connection is unknown and unknowably unrecoverable (ip " + getIp(client).ToString() + ")");
+            mainProgram.WriteLine("Client " + client.Socket.ToString() + "'s connection is unknown and unknowably unrecoverable (ip " + getIp(client).ToString() + ")");
             //no code ahead because I have no idea how to reconnect a client
         }
 
         private static void event_disconnected(TcpClientHandler client)
         {
-            Console.WriteLine("Client " + client.Socket.ToString() + " disconnected from " + getIp(client).ToString());
+            mainProgram.WriteLine("Client " + client.Socket.ToString() + " disconnected from " + getIp(client).ToString());
             int id_ = gameWorld.getPlayer(client.Socket);
             gameWorld.removeClient(id_);
         }
 
         private static void event_connected(TcpClientHandler client)
         {
-            Console.WriteLine("Client connected from " + getIp(client).ToString());
+            mainProgram.WriteLine("Client connected from " + getIp(client).ToString());
             //we'll put our code to initiate the player client here
             int entid_ = gameWorld.createPlayer(new GamePoint3D(0d, 0d, 512d), client);
             int sz_ = 16 + (gameWorld.entityMap.Count * 52) + (gameWorld.objectMap.Count * 52);
@@ -131,12 +138,11 @@ namespace GMS_Server
             }
             gameWorld.sendToClient(client, buff);
             buff.Deallocate();
-            Console.WriteLine("World and client data sent to socket " + client.Socket.ToString());
+            mainProgram.WriteLine("World and client data sent to socket " + client.Socket.ToString());
         }
 
         private static void event_received(TcpClientHandler client, BufferStream readBuffer)
         {
-            //Console.WriteLine("Received packet from " + getIp(client).ToString() + ", socket" + client.Socket.ToString());
             int plid = gameWorld.getPlayer(client.Socket);
 
             //this following line is probably absolutely essential to deal with the GMS packets
@@ -180,7 +186,7 @@ namespace GMS_Server
                 case 2: //client sent back a ping
                     GameClient client_ = gameWorld.getClientFromSocket(client.Socket);
                     client_.pingWatch.Stop();
-                    Console.WriteLine("Socket " + client.Socket.ToString() + " ping is " + client_.pingWatch.ElapsedMilliseconds);
+                    mainProgram.WriteLine("Socket " + client.Socket.ToString() + " ping is " + client_.pingWatch.ElapsedMilliseconds);
                     break;
                 case 3: //client is disconnecting
                     buff_ = new BufferStream(2, 1);
@@ -203,7 +209,7 @@ namespace GMS_Server
                     gameWorld.sendToClient(client, buff_);
                     break;
                 default:
-                    Console.WriteLine("invalid packet received");
+                    mainProgram.WriteLine("invalid packet received");
                     break;
             }
             if (buff_ != null)
@@ -214,24 +220,24 @@ namespace GMS_Server
         {
             if (host.ClientMap.Count > 0)
             {
-                Console.WriteLine("Closing the server with " + host.ClientMap.Count.ToString() + " clients");
+                mainProgram.WriteLine("Closing the server with " + host.ClientMap.Count.ToString() + " clients");
             }
             else
             {
-                Console.WriteLine("Closing the server with no clients");
+                mainProgram.WriteLine("Closing the server with no clients");
             }
         }
 
         private static TcpClientHandler event_clientCreated(SocketBinder binder, TcpServerHandler server, uint clientTimeout)
         {
             TcpClientHandler tmp_ = new TcpClientHandler(binder, server, clientTimeout);
-            Console.WriteLine("Client " + tmp_.Socket.ToString() + " has been created");
+            mainProgram.WriteLine("Client " + tmp_.Socket.ToString() + " has been created");
             return tmp_;
         }
 
         private static void event_started(TcpServerHandler host)
         {
-            Console.WriteLine("Server is now running");
+            mainProgram.WriteLine("Server is now running");
         }
 
         private static async void event_step()
@@ -254,7 +260,51 @@ namespace GMS_Server
         }
         public static IPEndPoint getIPEndPoint(TcpClientHandler client)
         {
-            return ((IPEndPoint)client.Receiver.Client.RemoteEndPoint);
+            return (IPEndPoint)client.Receiver.Client.RemoteEndPoint;
+        }
+        private static void InitConsoleFile()
+        {
+            StreamWriter sw = new StreamWriter(CONSOLE_FILE_PATH, false);
+            sw.WriteLine("Console file output started");
+            sw.Close();
+        }
+        public static void UpdateConsoleFile()
+        {
+            StreamWriter sw = new StreamWriter(CONSOLE_FILE_PATH, true);
+            while(ConsoleQueue.Count > 0)
+            {
+                sw.WriteLine(ConsoleQueue.Dequeue());
+            }
+            sw.Close();
+        }
+        public static void WriteLine(object obj)
+        {
+            WriteLine(obj.ToString());
+        }
+        public static void WriteLine(string format, object obj)
+        {
+            WriteLine(string.Format(format, obj));
+        }
+        public static void WriteLine(string format, params object[] objs)
+        {
+            WriteLine(string.Format(format, objs));
+        }
+        public static void WriteLine(string text)
+        {
+            DateTime now = DateTime.Now;
+            text = string.Format("{0}:{1}:{2} - {3}", now.Hour, now.Minute, now.Second, text);
+            ConsoleQueue.Enqueue(text);
+
+            ClearNextConsoleLine();
+            Console.WriteLine(text);
+            CommandSystem.DoCommand(CommandSystem.Update());
+        }
+        public static void ClearNextConsoleLine()
+        {
+            int currentLineCursor = Console.CursorTop;
+            Console.SetCursorPosition(0, Console.CursorTop + 1);
+            Console.Write(new string(' ', Console.WindowWidth));
+            Console.SetCursorPosition(0, currentLineCursor);
         }
     }
 }
